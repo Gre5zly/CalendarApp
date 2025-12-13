@@ -17,7 +17,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Главный класс приложения. Запускает JavaFX UI.
+ * Класс графического интерфейса (JavaFX).
+ * Организует взаимодействие пользователя с сервисами.
  */
 public class App extends Application {
     private static final Logger logger = LogManager.getLogger(App.class);
@@ -30,7 +31,7 @@ public class App extends Application {
     private Label holidayInfoLabel;
     private TextArea inputArea;
 
-    // Временное хранение объектов для сопоставления с ListView
+    // Временный список для сопоставления индексов ListView с объектами Note
     private List<Note> currentNotesList;
 
     public static void main(String[] args) {
@@ -39,102 +40,108 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) {
-        logger.info("Приложение запускается...");
+        logger.info("Инициализация интерфейса...");
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(15));
 
-        // --- ВЕРХНЯЯ ПАНЕЛЬ ---
+        // Верхняя панель (Дата и Статус)
         VBox topBox = new VBox(10);
         datePicker = new DatePicker(LocalDate.now());
-        holidayInfoLabel = new Label("Выберите дату для проверки праздников");
-        holidayInfoLabel.setStyle("-fx-text-fill: #2a66c4; -fx-font-weight: bold;");
+        holidayInfoLabel = new Label("Выберите дату для проверки...");
+        holidayInfoLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #2a66c4;");
 
+        // Обновление при смене даты
         datePicker.setOnAction(e -> refreshData());
 
-        topBox.getChildren().addAll(new Label("Дата:"), datePicker, holidayInfoLabel);
+        topBox.getChildren().addAll(new Label("Календарь:"), datePicker, holidayInfoLabel);
         root.setTop(topBox);
 
-        // --- ЦЕНТР (СПИСОК) ---
+        // Центральная панель (Список)
         noteListView = new ListView<>();
         root.setCenter(noteListView);
         BorderPane.setMargin(noteListView, new Insets(10, 0, 10, 0));
 
-        // --- ПРАВАЯ ПАНЕЛЬ (КНОПКИ) ---
+        // Правая панель (Управление)
         VBox rightBox = new VBox(10);
-        rightBox.setPrefWidth(200);
+        rightBox.setPrefWidth(220);
 
         inputArea = new TextArea();
         inputArea.setPromptText("Текст заметки...");
-        inputArea.setPrefRowCount(3);
+        inputArea.setPrefRowCount(4);
         inputArea.setWrapText(true);
 
         Button btnAdd = new Button("Добавить заметку");
         Button btnDelete = new Button("Удалить выбранную");
         Button btnClear = new Button("Очистить день");
 
-        // Растягиваем кнопки
         btnAdd.setMaxWidth(Double.MAX_VALUE);
         btnDelete.setMaxWidth(Double.MAX_VALUE);
         btnClear.setMaxWidth(Double.MAX_VALUE);
 
-        // События кнопок
-        btnAdd.setOnAction(e -> {
-            LocalDate date = datePicker.getValue();
-            String text = inputArea.getText();
-            if (date != null && !text.isBlank()) {
-                noteService.addNote(date, text);
-                inputArea.clear();
-                refreshData();
-            }
-        });
-
-        btnDelete.setOnAction(e -> {
-            int idx = noteListView.getSelectionModel().getSelectedIndex();
-            if (idx >= 0 && currentNotesList != null && idx < currentNotesList.size()) {
-                Note toDelete = currentNotesList.get(idx);
-                noteService.deleteNoteById(toDelete.getId());
-                refreshData();
-            }
-        });
-
-        btnClear.setOnAction(e -> {
-            LocalDate date = datePicker.getValue();
-            if (date != null) {
-                noteService.clearDay(date);
-                refreshData();
-            }
-        });
+        btnAdd.setOnAction(e -> addNoteAction());
+        btnDelete.setOnAction(e -> deleteNoteAction());
+        btnClear.setOnAction(e -> clearDayAction());
 
         rightBox.getChildren().addAll(new Label("Новая запись:"), inputArea, btnAdd, new Separator(), btnDelete, btnClear);
         root.setRight(rightBox);
 
-        // Первая отрисовка
+        // Первичная загрузка данных
         refreshData();
 
         Scene scene = new Scene(root, 800, 600);
-        stage.setTitle("Календарь Заметок (JavaFX)");
+        stage.setTitle("Календарь и Заметки (Курсовая работа)");
         stage.setScene(scene);
         stage.show();
     }
 
+    /**
+     * Основной метод обновления UI.
+     * Запрашивает статус дня у HolidayService и заметки у NoteService.
+     */
     private void refreshData() {
         LocalDate date = datePicker.getValue();
         if (date == null) return;
 
         // 1. Обновляем статус праздника
-        String status = holidayService.getDayStatus(date);
-        holidayInfoLabel.setText("Статус дня: " + status);
+        holidayInfoLabel.setText("Статус дня: " + holidayService.getDayStatus(date));
 
-        // 2. Обновляем список заметок
+        // 2. Обновляем список
         noteListView.getItems().clear();
         currentNotesList = noteService.getNotesForDate(date);
 
-        int counter = 1;
+        int i = 1;
         for (Note note : currentNotesList) {
+            // Форматируем строку: № | ID... | Текст
             String shortId = note.getId().toString().substring(0, 8);
-            String row = String.format("#%d | ID: ...%s | %s", counter++, shortId, note.getContent());
-            noteListView.getItems().add(row);
+            noteListView.getItems().add(String.format("#%d | ID:...%s | %s", i++, shortId, note.getContent()));
+        }
+    }
+
+    private void addNoteAction() {
+        LocalDate date = datePicker.getValue();
+        String text = inputArea.getText();
+        if (date != null && !text.isBlank()) {
+            noteService.addNote(date, text);
+            inputArea.clear();
+            refreshData();
+        }
+    }
+
+    private void deleteNoteAction() {
+        int idx = noteListView.getSelectionModel().getSelectedIndex();
+        if (idx >= 0 && currentNotesList != null && idx < currentNotesList.size()) {
+            Note toDelete = currentNotesList.get(idx);
+            noteService.deleteNoteById(toDelete.getId());
+            refreshData();
+        }
+    }
+
+    private void clearDayAction() {
+        LocalDate date = datePicker.getValue();
+        if (date != null) {
+            noteService.clearDay(date);
+            refreshData();
         }
     }
 }

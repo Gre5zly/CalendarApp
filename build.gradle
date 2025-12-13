@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    // 1. Добавляем плагин ShadowJar для создания "жирного" JAR
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -11,7 +10,7 @@ version '1.0-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(24) // Или 17
     }
 }
 
@@ -31,17 +30,12 @@ javafx {
 }
 
 application {
-    // Указываем Launcher как главный класс, чтобы обмануть проверку модулей
     mainClass = 'com.calendar.Launcher'
 }
 
-// 2. Настройка создания JAR-файла
 jar {
     manifest {
-        attributes(
-                // Обязательно указываем Launcher, а не App
-                'Main-Class': 'com.calendar.Launcher'
-        )
+        attributes 'Main-Class': 'com.calendar.Launcher'
     }
 }
 

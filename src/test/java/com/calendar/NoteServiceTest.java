@@ -4,6 +4,7 @@ import com.calendar.model.Note;
 import com.calendar.service.NoteService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -14,27 +15,29 @@ class NoteServiceTest {
     private final LocalDate testDate = LocalDate.of(2025, 1, 1);
 
     @BeforeEach
-    void init() {
+    void setUp() {
         service = new NoteService();
     }
 
     @Test
-    void testAddAndGetNote() {
-        service.addNote(testDate, "Hello World");
+    @DisplayName("Добавление заметки увеличивает список")
+    void testAddNote() {
+        service.addNote(testDate, "Test Note");
         List<Note> notes = service.getNotesForDate(testDate);
 
         Assertions.assertEquals(1, notes.size());
-        Assertions.assertEquals("Hello World", notes.get(0).getContent());
+        Assertions.assertEquals("Test Note", notes.get(0).getContent());
     }
 
     @Test
+    @DisplayName("Удаление заметки убирает её из списка")
     void testDeleteNote() {
         service.addNote(testDate, "To Delete");
         Note note = service.getNotesForDate(testDate).get(0);
 
-        boolean isDeleted = service.deleteNoteById(note.getId());
+        boolean deleted = service.deleteNoteById(note.getId());
 
-        Assertions.assertTrue(isDeleted);
+        Assertions.assertTrue(deleted);
         Assertions.assertTrue(service.getNotesForDate(testDate).isEmpty());
     }
 }
