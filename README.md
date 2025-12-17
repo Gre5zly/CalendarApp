@@ -37,4 +37,4 @@ java -jar build/libs/CalendarApp-1.0-SNAPSHOT-all.jar
 
 Альтернативно:
 Найдите файл src/main/java/com/calendar/Launcher.java.
-Нажмите зеленый треугольник (▶) рядом с методом main.
+Нажмите зеленый треугольник рядом с методом main.
